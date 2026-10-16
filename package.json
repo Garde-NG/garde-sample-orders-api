@@ -1,0 +1,31 @@
+{
+  "name": "garde-sample-orders-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deliberately out-of-date orders API used to exercise AutoAPI: old SDKs, removed endpoints, and a fictional payments API with a breaking v2.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --runInBand"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@octokit/rest": "^16.43.0",
+    "@sendgrid/mail": "^7.7.0",
+    "axios": "^0.27.2",
+    "express": "^4.18.2",
+    "openai": "^3.3.0",
+    "plaid": "^9.0.0",
+    "resend": "^1.0.0",
+    "stripe": "^8.200.0",
+    "twilio": "^3.84.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}

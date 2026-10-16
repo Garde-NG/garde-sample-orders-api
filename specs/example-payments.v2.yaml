@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Example Payments API
+  version: 2.0.0
+  description: Example Payments API (v2). Breaking: amount is now a string, /capture is gone, idempotency_key is required, status enum lost `failed`.
+servers:
+  - url: https://api.example-payments.test/v1
+security:
+  - bearerAuth: []
+paths:
+  /payments:
+    get:
+      operationId: listPayments
+      summary: List payments
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            # BREAKING: enum value `failed` removed
+            enum: [pending, succeeded]
+      responses:
+        "200":
+          description: A page of payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentList"
+    post:
+      operationId: createPayment
+      summary: Create a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+  /payments/{paymentId}:
+    get:
+      operationId: getPayment
+      summary: Retrieve a payment
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+      responses:
+        "200":
+          description: The payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+  # BREAKING: POST /payments/{paymentId}/capture removed entirely
+  /refunds/{refundId}:
+    get:
+      operationId: getRefund
+      summary: Retrieve a refund
+      # NON-BREAKING (informational): endpoint deprecated with a sunset date
+      deprecated: true
+      x-sunset: "2027-06-30"
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The refund
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refund"
+  # NON-BREAKING: new endpoint
+  /payouts:
+    get:
+      operationId: listPayouts
+      summary: List payouts
+      responses:
+        "200":
+          description: A page of payouts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    # NON-BREAKING: additional security scheme component
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+  parameters:
+    PaymentId:
+      name: paymentId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    PaymentCreate:
+      type: object
+      # BREAKING: idempotency_key is now required
+      required: [amount, currency, idempotency_key]
+      properties:
+        amount:
+          type: integer
+          description: Amount in minor units
+        currency:
+          type: string
+          enum: [USD, EUR, GBP]
+        description:
+          type: string
+        idempotency_key:
+          type: string
+        # NON-BREAKING: new optional request property
+        description_html:
+          type: string
+    Payment:
+      type: object
+      required: [id, amount, currency, status, created_at]
+      properties:
+        id:
+          type: string
+        # BREAKING: amount changed from integer to string
+        amount:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, succeeded, failed]
+        created_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        # NON-BREAKING: optional response property removed (`fee`) and added (`updated_at`)
+        updated_at:
+          type: string
+          format: date-time
+    PaymentList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        has_more:
+          type: boolean
+    Refund:
+      type: object
+      required: [id, payment_id, amount, status]
+      properties:
+        id:
+          type: string
+        payment_id:
+          type: string
+        amount:
+          type: integer
+        status:
+          type: string
